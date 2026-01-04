@@ -8,39 +8,43 @@ migrate = Migrate()
 
 def create_app():
     """
-    Flask application factory
+    Application factory function
     """
     app = Flask(__name__)
     app.config.from_object("config.Config")
 
-    # Initialize extensions with the app
+    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Import models so migrations detect them
+    # Import models
     from models import Superhero
 
-    # --- Routes ---
-    
-    @app.route('/')
-    def home():
+    @app.route("/")
+    def index():
         """
-        Home route to check if app is running
+        Root route to confirm API is running
         """
         return jsonify({"message": "Welcome to the Superheroes API!"})
 
-    @app.route('/superheroes', methods=['GET'])
+    @app.route("/superheroes", methods=["GET"])
     def get_superheroes():
         """
-        Returns a list of all superheroes in the database
+        GET /superheroes
+        Returns a list of all superheroes
         """
         superheroes = Superhero.query.all()
-        result = [{"id": hero.id, "name": hero.name, "power": hero.power} for hero in superheroes]
-        return jsonify(result)
+
+        result = []
+        for hero in superheroes:
+            result.append({
+                "id": hero.id,
+                "name": hero.name,
+                "power": hero.power
+            })
+
+        return jsonify(result), 200
 
     return app
 
-# Optional: for direct use (not needed if using manage.py)
-if __name__ == "__main__":
-    app = create_app()
-    app.run(debug=True)
+
