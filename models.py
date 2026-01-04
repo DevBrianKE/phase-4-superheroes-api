@@ -1,9 +1,8 @@
-
 from app import db
 
 class Superhero(db.Model):
     """
-    Superhero model
+    Superhero model for storing superhero data.
     """
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
