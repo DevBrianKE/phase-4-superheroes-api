@@ -2,35 +2,45 @@ from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-# Initialize Flask extensions
+# Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app():
     """
-    Application factory pattern for Flask.
-    Returns a configured Flask app.
+    Flask application factory
     """
     app = Flask(__name__)
-    app.config.from_object("config.Config")  # Load configuration
+    app.config.from_object("config.Config")
 
-    # Initialize database and migration objects
+    # Initialize extensions with the app
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Import models so migrations can detect them
+    # Import models so migrations detect them
     from models import Superhero
 
-    # Simple route to test API
-    @app.route("/superheroes", methods=["GET"])
+    # --- Routes ---
+    
+    @app.route('/')
+    def home():
+        """
+        Home route to check if app is running
+        """
+        return jsonify({"message": "Welcome to the Superheroes API!"})
+
+    @app.route('/superheroes', methods=['GET'])
     def get_superheroes():
         """
-        Returns a list of all superheroes in JSON format.
+        Returns a list of all superheroes in the database
         """
-        heroes = Superhero.query.all()
-        return jsonify([
-            {"id": hero.id, "name": hero.name, "power": hero.power} 
-            for hero in heroes
-        ])
+        superheroes = Superhero.query.all()
+        result = [{"id": hero.id, "name": hero.name, "power": hero.power} for hero in superheroes]
+        return jsonify(result)
 
     return app
+
+# Optional: for direct use (not needed if using manage.py)
+if __name__ == "__main__":
+    app = create_app()
+    app.run(debug=True)
