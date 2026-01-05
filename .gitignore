@@ -13,3 +13,10 @@ instance/*.db
 
 # Others
 *.sqlite3
+
+instance/
+*.db
+__pycache__/
+.env
+
+
