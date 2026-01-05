@@ -39,7 +39,7 @@ def create_app():
         if not name or not power:
             return jsonify({"error": "Name and power are required"}), 400
 
-        new_hero = Superhero(name=name, power=data.get("power"))
+        new_hero = Superhero(name=name, power=power)
         db.session.add(new_hero)
         db.session.commit()
 
@@ -49,29 +49,45 @@ def create_app():
             "power": new_hero.power
         }), 201
 
-    @app.route("/superheroes/<int:id>", methods=["GET"])
-    def get_superhero_by_id(id):
-        """
-        Fetch a single superhero by ID.
-        Returns 404 if superhero does not exist.
-        """
-        superhero = Superhero.query.get(id)
+    @app.route('/superheroes/<int:id>', methods=['GET'])
+    def get_superhero(id):
+        hero = Superhero.query.get(id)
 
-        if not superhero:
-            return {"error": "Superhero not found"}, 404
+        if not hero:
+            return jsonify({"error": "Superhero not found"}), 404
 
-        return {
-            "id": superhero.id,
-            "name": superhero.name,
-            "power": superhero.power
-        }, 200
+        return jsonify({
+            "id": hero.id,
+            "name": hero.name,
+            "power": hero.power
+        }), 200
+
+    @app.route('/superheroes/<int:id>', methods=['PUT'])
+    def update_superhero(id):
+        hero = Superhero.query.get(id)
+
+        if not hero:
+            return jsonify({"error": "Superhero not found"}), 404
+
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        if 'name' in data:
+            hero.name = data['name']
+        if 'power' in data:
+            hero.power = data['power']
+
+        db.session.commit()
+
+        return jsonify({
+            "id": hero.id,
+            "name": hero.name,
+            "power": hero.power
+        }), 200
 
     @app.route("/superheroes/<int:id>", methods=["DELETE"])
     def delete_superhero(id):
-        """
-        Delete a superhero by ID.
-        Returns 404 if superhero does not exist.
-        """
         superhero = Superhero.query.get(id)
 
         if not superhero:
