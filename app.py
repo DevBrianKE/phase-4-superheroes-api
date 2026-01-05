@@ -49,4 +49,21 @@ def create_app():
             "power": new_hero.power
         }), 201
 
+    @app.route("/superheroes/<int:id>", methods=["GET"])
+    def get_superhero_by_id(id):
+        """
+        Fetch a single superhero by ID.
+        Returns 404 if superhero does not exist.
+        """
+        superhero = Superhero.query.get(id)
+
+        if not superhero:
+            return {"error": "Superhero not found"}, 404
+
+        return {
+            "id": superhero.id,
+            "name": superhero.name,
+            "power": superhero.power
+        }, 200
+
     return app
