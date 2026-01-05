@@ -39,7 +39,7 @@ def create_app():
         if not name or not power:
             return jsonify({"error": "Name and power are required"}), 400
 
-        new_hero = Superhero(name=name, power=power)
+        new_hero = Superhero(name=name, power=data.get("power"))
         db.session.add(new_hero)
         db.session.commit()
 
@@ -65,5 +65,21 @@ def create_app():
             "name": superhero.name,
             "power": superhero.power
         }, 200
+
+    @app.route("/superheroes/<int:id>", methods=["DELETE"])
+    def delete_superhero(id):
+        """
+        Delete a superhero by ID.
+        Returns 404 if superhero does not exist.
+        """
+        superhero = Superhero.query.get(id)
+
+        if not superhero:
+            return {"error": "Superhero not found"}, 404
+
+        db.session.delete(superhero)
+        db.session.commit()
+
+        return {"message": "Superhero deleted successfully"}, 200
 
     return app
