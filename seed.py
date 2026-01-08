@@ -4,14 +4,16 @@ from models import db, Hero, Power, HeroPower
 app = create_app()
 
 with app.app_context():
-    print("🌱 Seeding database...")
+    print("🌱 Starting database seeding...")
 
-    # Clear existing data
+    # --- Clear existing data ---
     HeroPower.query.delete()
     Hero.query.delete()
     Power.query.delete()
+    db.session.commit()
+    print("🗑️ Cleared existing data.")
 
-    # Create heroes
+    # --- Create heroes ---
     heroes = [
         Hero(name="Kamala Khan", super_name="Ms. Marvel"),
         Hero(name="Doreen Green", super_name="Squirrel Girl"),
@@ -19,8 +21,11 @@ with app.app_context():
         Hero(name="Janet Van Dyne", super_name="The Wasp"),
         Hero(name="Wanda Maximoff", super_name="Scarlet Witch"),
     ]
+    db.session.add_all(heroes)
+    db.session.commit()
+    print(f"🦸 Created {len(heroes)} heroes.")
 
-    # Create powers
+    # --- Create powers ---
     powers = [
         Power(
             name="super strength",
@@ -35,19 +40,18 @@ with app.app_context():
             description="can stretch the human body to extreme lengths with ease"
         ),
     ]
-
-    db.session.add_all(heroes)
     db.session.add_all(powers)
     db.session.commit()
+    print(f"⚡ Created {len(powers)} powers.")
 
-    # Create hero powers
+    # --- Assign powers to heroes ---
     hero_powers = [
         HeroPower(hero_id=heroes[0].id, power_id=powers[0].id, strength="Strong"),
         HeroPower(hero_id=heroes[1].id, power_id=powers[2].id, strength="Average"),
         HeroPower(hero_id=heroes[2].id, power_id=powers[1].id, strength="Strong"),
     ]
-
     db.session.add_all(hero_powers)
     db.session.commit()
+    print(f"💥 Assigned powers to {len(hero_powers)} heroes.")
 
-    print("✅ Done seeding!")
+    print("✅ Database seeding complete!")
