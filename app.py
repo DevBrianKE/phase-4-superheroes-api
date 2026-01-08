@@ -1,28 +1,39 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_migrate import Migrate
-import models              # import the module (registers model classes and exposes models.db)
+from models import db, Hero, Power, HeroPower
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object("config.Config")
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///heroes.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Initialize the db and migrations using the db instance from models.py
-    models.db.init_app(app)
-    migrate = Migrate(app, models.db)
+    db.init_app(app)
+    Migrate(app, db)
 
-    # Basic health route
     @app.route("/")
     def index():
         return jsonify({"message": "Welcome to the Superheroes API!"})
 
-    # (Optional) quick test route to verify models are importable
-    @app.route("/_models")
-    def list_models():
-        # simple check to ensure models import ok
-        return jsonify({
-            "has_hero": hasattr(models, "Hero"),
-            "has_power": hasattr(models, "Power"),
-            "has_hero_power": hasattr(models, "HeroPower")
-        })
+    @app.route("/heroes", methods=["GET"])
+    def get_heroes():
+        heroes = Hero.query.all()
+        return jsonify([hero.to_dict() for hero in heroes]), 200
+
+    @app.route("/heroes", methods=["POST"])
+    def create_hero():
+        data = request.get_json()
+        super_name = data.get("name")  # client sends "name"
+
+        if not super_name:
+            return jsonify({"error": "Hero name is required"}), 400
+
+        hero = Hero(super_name=super_name)
+        db.session.add(hero)
+        db.session.commit()
+        return jsonify(hero.to_dict()), 201
 
     return app
+
+if __name__ == "__main__":
+    app = create_app()
+    app.run(debug=True)

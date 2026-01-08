@@ -16,6 +16,12 @@ class Hero(db.Model):
         cascade="all, delete-orphan"
     )
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "super_name": self.super_name
+        }
 
 class Power(db.Model):
     __tablename__ = "powers"
@@ -33,9 +39,15 @@ class Power(db.Model):
     @validates("description")
     def validate_description(self, key, value):
         if not value or len(value) < 20:
-            raise ValueError("Description must be at least 20 characters")
+            raise ValueError("Description must be at least 20 characters long")
         return value
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description
+        }
 
 class HeroPower(db.Model):
     __tablename__ = "hero_powers"
