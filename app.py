@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request
 from flask_migrate import Migrate
 from models import db, Hero, Power, HeroPower
 
-
 def create_app():
     app = Flask(__name__)
 
@@ -12,10 +11,12 @@ def create_app():
     db.init_app(app)
     Migrate(app, db)
 
+    # --- INDEX ---
     @app.route("/")
     def index():
         return jsonify({"message": "Welcome to the Superheroes API!"})
 
+    # --- HERO ROUTES ---
     @app.route("/heroes", methods=["GET"])
     def get_heroes():
         heroes = Hero.query.all()
@@ -24,7 +25,6 @@ def create_app():
     @app.route("/heroes", methods=["POST"])
     def create_hero():
         data = request.get_json()
-
         name = data.get("name")
         super_name = data.get("super_name")
 
@@ -34,13 +34,11 @@ def create_app():
         hero = Hero(name=name, super_name=super_name)
         db.session.add(hero)
         db.session.commit()
-
         return jsonify(hero.to_dict()), 201
 
     @app.route("/heroes/<int:id>", methods=["GET"])
     def get_hero(id):
         hero = Hero.query.get(id)
-
         if not hero:
             return jsonify({"error": "Hero not found"}), 404
 
@@ -63,6 +61,7 @@ def create_app():
             ]
         }), 200
 
+    # --- POWER ROUTES ---
     @app.route("/powers", methods=["GET"])
     def get_powers():
         powers = Power.query.all()
@@ -77,10 +76,8 @@ def create_app():
     @app.route("/powers/<int:id>", methods=["GET"])
     def get_power(id):
         power = Power.query.get(id)
-
         if not power:
             return jsonify({"error": "Power not found"}), 404
-
         return jsonify({
             "id": power.id,
             "name": power.name,
@@ -90,7 +87,6 @@ def create_app():
     @app.route("/powers/<int:id>", methods=["PATCH"])
     def update_power(id):
         power = Power.query.get(id)
-
         if not power:
             return jsonify({"error": "Power not found"}), 404
 
@@ -102,15 +98,59 @@ def create_app():
 
         power.description = description
         db.session.commit()
-
         return jsonify({
             "id": power.id,
             "name": power.name,
             "description": power.description
         }), 200
 
-    return app
+    # --- HEROPOWER ROUTE ---
+    @app.route("/hero_powers", methods=["POST"])
+    def create_hero_power():
+        data = request.get_json()
+        hero_id = data.get("hero_id")
+        power_id = data.get("power_id")
+        strength = data.get("strength")
 
+        # Validate hero and power exist
+        hero = Hero.query.get(hero_id)
+        power = Power.query.get(power_id)
+
+        if not hero or not power:
+            return jsonify({"errors": ["Hero or Power not found"]}), 404
+
+        # Validate strength
+        if strength not in ["Strong", "Weak", "Average"]:
+            return jsonify({"errors": ["Strength must be Strong, Weak, or Average"]}), 400
+
+        # Create hero_power
+        hero_power = HeroPower(
+            hero_id=hero.id,
+            power_id=power.id,
+            strength=strength
+        )
+
+        db.session.add(hero_power)
+        db.session.commit()
+
+        return jsonify({
+            "id": hero_power.id,
+            "hero_id": hero.id,
+            "power_id": power.id,
+            "strength": hero_power.strength,
+            "hero": {
+                "id": hero.id,
+                "name": hero.name,
+                "super_name": hero.super_name
+            },
+            "power": {
+                "id": power.id,
+                "name": power.name,
+                "description": power.description
+            }
+        }), 201
+
+    return app
 
 if __name__ == "__main__":
     app = create_app()
