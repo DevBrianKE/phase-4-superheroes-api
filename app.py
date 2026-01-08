@@ -49,8 +49,6 @@ def create_app():
             "hero_powers": [
                 {
                     "id": hp.id,
-                    "hero_id": hp.hero_id,
-                    "power_id": hp.power_id,
                     "strength": hp.strength,
                     "power": {
                         "id": hp.power.id,
@@ -65,24 +63,14 @@ def create_app():
     @app.route("/powers", methods=["GET"])
     def get_powers():
         powers = Power.query.all()
-        return jsonify([
-            {
-                "id": power.id,
-                "name": power.name,
-                "description": power.description
-            } for power in powers
-        ]), 200
+        return jsonify([power.to_dict() for power in powers]), 200
 
     @app.route("/powers/<int:id>", methods=["GET"])
     def get_power(id):
         power = Power.query.get(id)
         if not power:
             return jsonify({"error": "Power not found"}), 404
-        return jsonify({
-            "id": power.id,
-            "name": power.name,
-            "description": power.description
-        }), 200
+        return jsonify(power.to_dict()), 200
 
     @app.route("/powers/<int:id>", methods=["PATCH"])
     def update_power(id):
@@ -92,19 +80,14 @@ def create_app():
 
         data = request.get_json()
         description = data.get("description")
-
         if not description or len(description) < 20:
             return jsonify({"errors": ["Description must be at least 20 characters"]}), 400
 
         power.description = description
         db.session.commit()
-        return jsonify({
-            "id": power.id,
-            "name": power.name,
-            "description": power.description
-        }), 200
+        return jsonify(power.to_dict()), 200
 
-    # --- HEROPOWER ROUTE ---
+    # --- HEROPOWER ROUTES ---
     @app.route("/hero_powers", methods=["POST"])
     def create_hero_power():
         data = request.get_json()
@@ -112,43 +95,57 @@ def create_app():
         power_id = data.get("power_id")
         strength = data.get("strength")
 
-        # Validate hero and power exist
         hero = Hero.query.get(hero_id)
         power = Power.query.get(power_id)
 
         if not hero or not power:
             return jsonify({"errors": ["Hero or Power not found"]}), 404
 
-        # Validate strength
         if strength not in ["Strong", "Weak", "Average"]:
             return jsonify({"errors": ["Strength must be Strong, Weak, or Average"]}), 400
 
-        # Create hero_power
-        hero_power = HeroPower(
-            hero_id=hero.id,
-            power_id=power.id,
-            strength=strength
-        )
-
+        hero_power = HeroPower(hero_id=hero.id, power_id=power.id, strength=strength)
         db.session.add(hero_power)
         db.session.commit()
 
         return jsonify({
             "id": hero_power.id,
-            "hero_id": hero.id,
-            "power_id": power.id,
             "strength": hero_power.strength,
-            "hero": {
-                "id": hero.id,
-                "name": hero.name,
-                "super_name": hero.super_name
-            },
-            "power": {
-                "id": power.id,
-                "name": power.name,
-                "description": power.description
-            }
+            "hero": hero.to_dict(),
+            "power": power.to_dict()
         }), 201
+
+    @app.route("/hero_powers/<int:id>", methods=["PATCH"])
+    def update_hero_power(id):
+        hp = HeroPower.query.get(id)
+        if not hp:
+            return jsonify({"error": "HeroPower not found"}), 404
+
+        data = request.get_json()
+        strength = data.get("strength")
+        if strength and strength not in ["Strong", "Weak", "Average"]:
+            return jsonify({"errors": ["Strength must be Strong, Weak, or Average"]}), 400
+
+        if strength:
+            hp.strength = strength
+
+        db.session.commit()
+        return jsonify({
+            "id": hp.id,
+            "strength": hp.strength,
+            "hero": hp.hero.to_dict(),
+            "power": hp.power.to_dict()
+        }), 200
+
+    @app.route("/hero_powers/<int:id>", methods=["DELETE"])
+    def delete_hero_power(id):
+        hp = HeroPower.query.get(id)
+        if not hp:
+            return jsonify({"error": "HeroPower not found"}), 404
+
+        db.session.delete(hp)
+        db.session.commit()
+        return jsonify({"message": "HeroPower deleted successfully"}), 200
 
     return app
 
